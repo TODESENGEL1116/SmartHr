@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>员工信息管理系统</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; background: #f5f7fa; }
+    
+    #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 400px; }
+    .login-box h2 { text-align: center; color: #1a3e72; margin-bottom: 30px; }
+    .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; }
+    .login-box button { width: 100%; padding: 12px; background: #2f6fd0; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+    .login-box button:hover { background: #1a5bb5; }
+    .login-error { color: #d64541; text-align: center; margin-top: 10px; display: none; }
+    
+    #mainPage { display: none; padding: 30px 20px; }
+    .container { max-width: 960px; margin: 0 auto; }
+    
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px 20px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .user-info { display: flex; align-items: center; gap: 15px; }
+    .user-info span { color: #333; font-size: 15px; }
+    .logout-btn { padding: 8px 16px; background: #d64541; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .logout-btn:hover { background: #b33a36; }
+    
+    h1 { text-align: center; font-size: 28px; color: #1a3e72; margin-bottom: 24px; letter-spacing: 2px; }
+    
+    .search-bar { text-align: center; }
+    #searchInput { width: 420px; max-width: 90%; padding: 10px 14px; font-size: 15px; border: 1px solid #c5cdd8; border-radius: 6px; outline: none; }
+    #searchInput:focus { border-color: #2f6fd0; }
+    
+    .history-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 660px; max-width: 100%; margin: 12px auto 20px; }
+    .history-chip { width: 200px; display: flex; justify-content: space-between; align-items: center; background: #eef3fb; border: 1px solid #d4e0f2; color: #2f6fd0; padding: 5px 12px; border-radius: 15px; font-size: 13px; cursor: pointer; }
+    .chip-del { color: #999; font-weight: bold; padding: 0 4px; }
+    .chip-del:hover { color: #d64541; }
+    
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th { background: #e8eef7; color: #333; font-weight: 600; }
+    th, td { border: 1px solid #e3e8ef; padding: 10px 12px; text-align: center; font-size: 14px; }
+    tr:nth-child(even) { background: #fafbfc; }
+    .link-edit { color: #2f6fd0; cursor: pointer; }
+    .link-del { color: #d64541; cursor: pointer; }
+    
+    .pagination { margin-top: 18px; text-align: center; background: #eef1f6; padding: 14px; border-radius: 8px; }
+    .pagination button { padding: 8px 18px; font-size: 14px; border: 1px solid #9aa4b2; background: #fff; border-radius: 6px; cursor: pointer; margin: 0 8px; }
+    .pagination button:disabled { color: #bbb; cursor: not-allowed; }
+    #pageInput { width: 60px; padding: 7px; text-align: center; border: 1px solid #9aa4b2; border-radius: 6px; }
+    .page-info { margin-top: 8px; color: #8a94a3; font-size: 13px; }
+    
+    .add-btn { display: block; margin: 0 auto 20px; padding: 10px 24px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; }
+    .add-btn:hover { background: #218838; }
+</style>
+</head>
+<body>
+
+<div id="loginPage">
+    <div class="login-box">
+        <h2>员工信息管理系统</h2>
+        <input type="text" id="loginName" placeholder="请输入姓名">
+        <input type="text" id="loginEmpId" placeholder="请输入工号（如 20260001）">
+        <button onclick="doLogin()">登录</button>
+        <div class="login-error" id="loginError">名字或工号错误</div>
+    </div>
+</div>
+
+<div id="mainPage">
+    <div class="top-bar">
+        <div></div>
+        <div class="user-info">
+            <span id="userGreeting">你好</span>
+            <button class="logout-btn" onclick="doLogout()">退出登录</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h1>员工信息管理系统</h1>
+        
+        <button class="add-btn" id="addBtn" onclick="addEmployee()" style="display:none;">+ 新增员工</button>
+        
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="智能搜索员工姓名（回车保存记录）..." autocomplete="off">
+        </div>
+        <div class="history-row" id="historyRow"></div>
+        
+        <table>
+            <thead>
+                <tr><th>序号</th><th>工号</th><th>姓名</th><th>操作</th><th>操作</th></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        
+        <div class="pagination">
+            <button id="prevBtn">← 上一页</button>
+            第 <input id="pageInput" type="number" min="1"> 页
+            <button id="nextBtn">下一页 →</button>
+            <div class="page-info" id="pageInfo"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const PAGE_SIZE = 50;
+    let currentPage = 1, totalPages = 1, currentSearch = '', debounceTimer = null;
+    let currentUser = null;
+    
+    async function doLogin() {
+        const name = document.getElementById('loginName').value.trim();
+        const empId = document.getElementById('loginEmpId').value.trim();
+        if (!name || !empId) {
+            document.getElementById('loginError').textContent = '请填写姓名和工号';
+            document.getElementById('loginError').style.display = 'block';
+            return;
+        }
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `name=${encodeURIComponent(name)}&emp_id=${encodeURIComponent(empId)}`
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentUser = data;
+            localStorage.setItem('currentUser', JSON.stringify(data));
+            showMainPage();
+        } else {
+            document.getElementById('loginError').textContent = data.message;
+            document.getElementById('loginError').style.display = 'block';
+        }
+    }
+    
+    function doLogout() {
+        localStorage.removeItem('currentUser');
+        currentUser = null;
+        document.getElementById('loginPage').style.display = 'flex';
+        document.getElementById('mainPage').style.display = 'none';
+    }
+    
+    function showMainPage() {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainPage').style.display = 'block';
+        document.getElementById('userGreeting').textContent = `你好 ${currentUser.name}`;
+        document.getElementById('addBtn').style.display = currentUser.is_boss ? 'block' : 'none';
+        renderHistory();
+        loadData();
+    }
+    
+    window.onload = () => {
+        const saved = localStorage.getItem('currentUser');
+        if (saved) { currentUser = JSON.parse(saved); showMainPage(); }
+    };
+    
+    async function loadData() {
+        const url = `/api/staff?page=${currentPage}&search=${encodeURIComponent(currentSearch)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        currentPage = data.page;
+        totalPages = data.pages;
+        renderTable(data.list);
+        renderPagination(data);
+    }
+    
+    function renderTable(list) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        if (!list.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="color:#999;padding:20px;">未找到匹配的员工</td></tr>';
+            return;
+        }
+        list.forEach((emp, i) => {
+            const seq = (currentPage - 1) * PAGE_SIZE + i + 1;
+            const tr = document.createElement('tr');
+            const actionHtml = currentUser.is_boss ? 
+                `<td><span class="link-edit" onclick="editEmployee(${emp.id})">修改</span></td>
+                 <td><span class="link-del" onclick="deleteEmployee(${emp.id})">删除</span></td>` :
+                `<td>-</td><td>-</td>`;
+            tr.innerHTML = `<td>${seq}</td><td>${emp.emp_id}</td><td>${emp.name}</td>${actionHtml}`;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    function renderPagination(data) {
+        document.getElementById('pageInput').value = data.page;
+        document.getElementById('prevBtn').disabled = (data.page <= 1);
+        document.getElementById('nextBtn').disabled = (data.page >= data.pages);
+        document.getElementById('pageInfo').textContent = `共 ${data.pages} 页 · ${data.total} 条记录`;
+    }
+    
+    document.getElementById('prevBtn').onclick = () => { if (currentPage > 1) { currentPage--; loadData(); } };
+    document.getElementById('nextBtn').onclick = () => { if (currentPage < totalPages) { currentPage++; loadData(); } };
+    document.getElementById('pageInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            let p = parseInt(e.target.value);
+            if (p >= 1 && p <= totalPages) { currentPage = p; loadData(); }
+        }
+    });
+    
+    document.getElementById('searchInput').addEventListener('input', e => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            currentSearch = e.target.value.trim();
+            currentPage = 1;
+            loadData();
+        }, 300);
+    });
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && e.target.value.trim()) saveHistory(e.target.value.trim());
+    });
+    
+    function getHistory() { return JSON.parse(localStorage.getItem('searchHistory') || '[]'); }
+    function saveHistory(q) {
+        let h = getHistory().filter(x => x !== q);
+        h.unshift(q);
+        localStorage.setItem('searchHistory', JSON.stringify(h.slice(0, 6)));
+        renderHistory();
+    }
+    function renderHistory() {
+        const box = document.getElementById('historyRow');
+        box.innerHTML = '';
+        getHistory().forEach(q => {
+            const chip = document.createElement('div');
+            chip.className = 'history-chip';
+            chip.innerHTML = `<span>🕒 ${q}</span><span class="chip-del">×</span>`;
+            chip.onclick = () => { document.getElementById('searchInput').value = q; currentSearch = q; currentPage = 1; loadData(); };
+            chip.querySelector('.chip-del').onclick = e => {
+                e.stopPropagation();
+                localStorage.setItem('searchHistory', JSON.stringify(getHistory().filter(x => x !== q)));
+                renderHistory();
+            };
+            box.appendChild(chip);
+        });
+    }
+    
+    async function editEmployee(id) {
+        const newName = prompt('请输入新名字：');
+        if (!newName) return;
+        const res = await fetch('/api/staff/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `id=${id}&name=${encodeURIComponent(newName)}`
+        });
+        const data = await res.json();
+        if (data.success) { alert('修改成功！'); loadData(); }
+        else alert('修改失败：' + data.message);
+    }
+    
+    async function deleteEmployee(id) {
+        if (!confirm('确定要删除这个员工吗？')) return;
+        const res = await fetch('/api/staff/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `id=${id}`
+        });
+        const data = await res.json();
+        if (data.success) { alert('删除成功！'); loadData(); }
+        else alert('删除失败：' + data.message);
+    }
+    
+    async function addEmployee() {
+        const name = prompt('请输入新员工姓名：');
+        if (!name) return;
+        const res = await fetch('/api/staff/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `name=${encodeURIComponent(name)}`
+        });
+        const data = await res.json();
+        if (data.success) { alert(`新增成功！工号：2026${String(data.id).padStart(4,'0')}`); loadData(); }
+        else alert('新增失败：' + data.message);
+    }
+</script>
+</body>
+</html>
