@@ -289,7 +289,7 @@ int main() {
     bind(server_fd, (struct sockaddr *)&address, sizeof(address));
     listen(server_fd, 10);
 
-    printf("🚀 服务器已启动: http://localhost:%d\n", PORT);
+    printf("服务器已启动: http://localhost:%d\n", PORT);
 
     while (1) {
         int client_fd = accept(server_fd, NULL, NULL);
